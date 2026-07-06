@@ -22,7 +22,7 @@ from typing import List, Literal, Optional
 import numpy as np
 
 from .cvd import CVD_TYPES, separability_report, simulate_cvd
-from .palettes import hex_to_rgb
+from .palettes import COLORMAPS, SEQUENTIAL, CATEGORICAL, colormap, hex_to_rgb
 
 PaletteType = Literal["qualitative", "sequential", "diverging"]
 
@@ -33,7 +33,7 @@ _CVD_LABELS = {
     "tritanomaly": "Tritanopia",
 }
 
-__all__ = ["BirdPalette", "render_card"]
+__all__ = ["BirdPalette", "render_card", "render_overview"]
 
 
 @dataclass
@@ -242,6 +242,86 @@ def render_card(palette, outfile=None, dpi=150):
         0, 1.0, "\n".join(_provenance_lines(palette)),
         fontsize=8, color="#555555", va="top", linespacing=1.5,
     )
+
+    if outfile:
+        fig.savefig(outfile, dpi=dpi, facecolor=fig.get_facecolor())
+    return fig
+
+
+def _cmap_rgb(name, n):
+    """Amostra um colormap "aves_*" em ``n`` pontos -> array ``(n, 3)`` em [0,1]."""
+    cmap = colormap(name, n=n)
+    return cmap(np.linspace(0.0, 1.0, n))[:, :3]
+
+
+def _overview_entries(n_continuous):
+    """Monta as linhas do catálogo: (título, tipo, código, rgb, hex_ou_None).
+
+    ``hex_labels`` só é preenchido para a paleta categórica (discreta); os
+    colormaps contínuos entram como faixa amostrada, sem rótulos por cor.
+    """
+    entries = [(
+        "aves_categorical", "qualitative", "plumaria.categorical()",
+        np.array([hex_to_rgb(c) for c in CATEGORICAL], dtype=float),
+        [c.upper() for c in CATEGORICAL],
+    )]
+    for name in COLORMAPS:
+        kind = "sequential" if name in SEQUENTIAL else "diverging"
+        entries.append((
+            name, kind, f'cmap="{name}"', _cmap_rgb(name, n_continuous), None,
+        ))
+    return entries
+
+
+def render_overview(cvd=True, outfile=None, dpi=150, n_continuous=48):
+    """Catálogo "de relance" de todas as paletas Aves, uma por linha.
+
+    No espírito das folhas de referência do seaborn, mas com o diferencial do
+    plumaria: se ``cvd`` (padrão), cada paleta aparece como o swatch normal
+    seguido das três simulações de daltonismo empilhadas. Cada bloco traz o
+    nome, o tipo e o snippet de código para usar a paleta; a categórica ainda
+    exibe o flag de separabilidade perceptual.
+
+    Retorna a ``Figure``; se ``outfile`` for dado, também salva em disco.
+    Requer matplotlib.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg", force=False)
+    import matplotlib.pyplot as plt
+
+    entries = _overview_entries(n_continuous)
+    row_labels = (
+        ["normal"] + [_CVD_LABELS[t] for t in CVD_TYPES] if cvd else None
+    )
+
+    n = len(entries)
+    fig = plt.figure(figsize=(9.0, 2.2 * n + 0.4), dpi=dpi)
+    fig.patch.set_facecolor("white")
+    fig.suptitle(
+        "plumaria — paletas Aves (swatch + simulação de daltonismo)",
+        fontsize=13, fontweight="bold", x=0.11, ha="left", y=0.985,
+    )
+    gs = fig.add_gridspec(
+        nrows=n, ncols=1, hspace=1.0,
+        left=0.14, right=0.97, top=0.93, bottom=0.03,
+    )
+
+    for i, (title, kind, code, rgb, hex_labels) in enumerate(entries):
+        ax = fig.add_subplot(gs[i])
+        if cvd:
+            stack = np.stack([rgb] + [simulate_cvd(rgb, t) for t in CVD_TYPES])
+            _draw_swatch(ax, stack, col_labels=hex_labels, row_labels=row_labels)
+        else:
+            _draw_swatch(ax, rgb, col_labels=hex_labels)
+
+        header = f"{title}   ·   {kind}     {code}"
+        if kind == "qualitative":
+            report = separability_report([c for c in CATEGORICAL])
+            flag = "✓ segura" if report["safe"] else "⚠ risco"
+            worst_de = report["worst"][1]
+            header += f"     [ΔE mín. {worst_de:.1f} · {flag}]"
+        ax.set_title(header, fontsize=9, loc="left", pad=6)
 
     if outfile:
         fig.savefig(outfile, dpi=dpi, facecolor=fig.get_facecolor())
