@@ -18,10 +18,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Registrar colormaps e ajustar rcParams exige matplotlib. O acesso às cores
-# (categorical/hex_to_rgb) roda só com numpy, sem este extra.
-viz = ["matplotlib>=3.5"]
-dev = ["pytest>=7.0", "matplotlib>=3.5"]
+# Registrar colormaps/ajustar rcParams exige matplotlib; a galeria (cards) e a
+# simulação de daltonismo (módulo `cvd`) exigem também colorspacious. O acesso
+# às cores (categorical/hex_to_rgb) roda só com numpy, sem estes extras.
+viz = ["matplotlib>=3.5", "colorspacious>=1.1"]
+dev = ["pytest>=7.0", "matplotlib>=3.5", "colorspacious>=1.1"]
 
 [project.urls]
 Homepage = "https://github.com/napvasconcelos/plumaria"
