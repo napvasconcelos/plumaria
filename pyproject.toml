@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plumaria"
+version = "0.1.0"
+description = "Paletas de cores colorblind-safe derivadas de plumagens de aves (categórica + colormaps)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+    { name = "Nivaldo Vasconcelos", email = "nivaldo.vasconcelos@ufpe.br" },
+]
+keywords = ["colormap", "palette", "colorblind", "matplotlib", "dataviz", "aves"]
+dependencies = [
+    "numpy>=1.22",
+]
+
+[project.optional-dependencies]
+# Registrar colormaps e ajustar rcParams exige matplotlib. O acesso às cores
+# (categorical/hex_to_rgb) roda só com numpy, sem este extra.
+viz = ["matplotlib>=3.5"]
+dev = ["pytest>=7.0", "matplotlib>=3.5"]
+
+[project.urls]
+Homepage = "https://github.com/napvasconcelos/plumaria"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

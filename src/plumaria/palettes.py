@@ -10,7 +10,7 @@ faixa da paleta Okabe-Ito.
 
 Uso rápido
 ----------
->>> from neurotools.viz import palettes
+>>> from plumaria import palettes
 >>> palettes.categorical(3)
 ['#0A458A', '#F76F24', '#126C7D']
 >>> palettes.register()          # registra colormaps no matplotlib
@@ -20,7 +20,7 @@ Uso rápido
 
 matplotlib é opcional: `categorical`, `hex_to_rgb` e os dados de cores funcionam
 só com numpy; `colormap`, `register` e `set_defaults` exigem matplotlib
-(instale com o extra ``neurotools[viz]``).
+(instale com o extra ``plumaria[viz]``).
 """
 
 from __future__ import annotations
