@@ -1,0 +1,44 @@
+name: Publicar no PyPI
+
+# Dispara ao publicar um Release no GitHub. Publica via Trusted Publishing
+# (OIDC): nenhum token/senha fica guardado no repositório.
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar o build
+        run: python -m pip install --upgrade build
+      - name: Gerar artefatos
+        run: python -m build
+      - name: Validar metadados
+        run: |
+          python -m pip install --upgrade twine
+          python -m twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: Publicar no PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # O nome do environment precisa bater com o registrado no Trusted Publisher.
+    environment: pypi
+    permissions:
+      id-token: write  # exigido pelo OIDC do Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
